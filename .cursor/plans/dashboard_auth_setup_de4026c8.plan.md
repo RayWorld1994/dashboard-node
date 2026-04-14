@@ -4,28 +4,28 @@ overview: Add JWT-based email/password authentication to the Node.js API (with P
 todos:
   - id: backend-install
     content: "Install backend packages: prisma, @prisma/client, bcrypt, jsonwebtoken, cors, dotenv"
-    status: pending
+    status: completed
   - id: prisma-setup
     content: Initialize Prisma, write schema.prisma with User model, run first migration
-    status: pending
+    status: completed
   - id: backend-routes
     content: Create src/routes/auth.js (register + login) and src/middleware/auth.js (JWT verification)
-    status: pending
+    status: completed
   - id: backend-wire
     content: Update index.js to load dotenv, cors, JSON body parsing, and mount auth routes
-    status: pending
+    status: completed
   - id: frontend-install
     content: Install react-router-dom, tailwindCss in the dashboard React app
-    status: pending
+    status: completed
   - id: frontend-context
     content: Create AuthContext.tsx to store and expose the JWT token app-wide
-    status: pending
+    status: completed
   - id: frontend-pages
     content: Create LoginPage.tsx, RegisterPage.tsx, and DashboardPage.tsx
-    status: pending
+    status: completed
   - id: frontend-protected
     content: Create ProtectedRoute.tsx and update App.tsx with all routes
-    status: pending
+    status: completed
 isProject: false
 ---
 

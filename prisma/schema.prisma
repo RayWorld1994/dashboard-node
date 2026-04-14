@@ -1,0 +1,23 @@
+// This is your Prisma schema file.
+// It defines the structure of your database tables.
+// Learn more: https://pris.ly/d/prisma-schema
+
+// The generator tells Prisma which client to generate.
+generator client {
+  provider = "prisma-client-js"
+}
+
+// This tells Prisma we are using PostgreSQL.
+// In Prisma 7 the connection URL lives in prisma.config.ts, not here.
+datasource db {
+  provider = "postgresql"
+}
+
+// The User model maps to a "User" table in the database.
+// Each field becomes a column.
+model User {
+  id        Int      @id @default(autoincrement()) // auto-incrementing primary key
+  email     String   @unique                       // no two users can share an email
+  password  String                                 // stores the bcrypt hash, never plain text
+  createdAt DateTime @default(now())               // automatically set when a row is created
+}

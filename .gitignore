@@ -10,3 +10,5 @@ pnpm-debug.log*
 dist/
 build/
 
+
+/src/generated/prisma
