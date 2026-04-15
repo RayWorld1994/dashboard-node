@@ -68,14 +68,15 @@ async function seed() {
   console.log(`  ✓ ${projects.length} projects`);
 
   // ── 3. Tasks ─────────────────────────────────────────────────────────────
-  const taskStatuses = ["todo", "in_progress", "done"];
-  const priorities = ["low", "medium", "high"];
+  const taskStatuses = ["todo", "in_progress", "review", "blocked", "done"];
+  const priorities = ["low", "medium", "high", "urgent"];
 
   const tasks = await Promise.all(
     Array.from({ length: 60 }).map(() =>
       prisma.task.create({
         data: {
           title: faker.hacker.phrase(),
+          description: faker.lorem.sentences(2),
           status: pick(taskStatuses),
           priority: pick(priorities),
           projectId: pick(projects).id,

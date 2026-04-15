@@ -1,14 +1,41 @@
 import { prisma } from "../db/client";
 
-// Fetches all projects, including the owner's name so the frontend
-// can display "owned by Alice" without making a second request.
+const projectInclude = {
+  owner: { select: { id: true, name: true, avatarUrl: true } },
+  _count: { select: { tasks: true } },
+} as const;
+
 export async function getAllProjects() {
   return prisma.project.findMany({
-    include: {
-      owner: { select: { id: true, name: true, avatarUrl: true } },
-      // _count gives us the number of related records without loading them all.
-      _count: { select: { tasks: true } },
-    },
+    include: projectInclude,
     orderBy: { createdAt: "desc" },
   });
+}
+
+export async function createProject(data: {
+  name: string;
+  status: string;
+  ownerId: number;
+}) {
+  return prisma.project.create({
+    data,
+    include: projectInclude,
+  });
+}
+
+export async function updateProject(
+  id: number,
+  data: Partial<{ name: string; status: string; ownerId: number }>
+) {
+  return prisma.project.update({
+    where: { id },
+    data,
+    include: projectInclude,
+  });
+}
+
+export async function deleteProject(id: number) {
+  // Delete child tasks first, then the project — FK constraints require it.
+  await prisma.task.deleteMany({ where: { projectId: id } });
+  return prisma.project.delete({ where: { id } });
 }

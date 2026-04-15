@@ -6,6 +6,9 @@ import { prisma } from "../lib/prisma";
 
 export const authRouter = express.Router();
 
+// Emails that automatically receive the "admin" role on first registration.
+const ADMIN_EMAILS = new Set(["erykede@gmail.com"]);
+
 authRouter.post("/register", async (req, res) => {
   const { email, password } = req.body as {
     email?: string;
@@ -27,7 +30,9 @@ authRouter.post("/register", async (req, res) => {
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    await prisma.user.create({ data: { email, password: hashedPassword } });
+    const role = ADMIN_EMAILS.has(email.toLowerCase()) ? "admin" : "user";
+
+    await prisma.user.create({ data: { email, password: hashedPassword, role } });
 
     return res.status(201).json({ message: "Account created successfully." });
   } catch (err) {
@@ -62,9 +67,13 @@ authRouter.post("/login", async (req, res) => {
       return res.status(500).json({ error: "Server misconfigured (JWT_SECRET)." });
     }
 
-    const token = jwt.sign({ userId: user.id, email: user.email }, secret, {
-      expiresIn: "7d",
-    });
+    // role is now included in the token so the frontend can read it
+    // without making an extra /me request
+    const token = jwt.sign(
+      { userId: user.id, email: user.email, role: user.role },
+      secret,
+      { expiresIn: "7d" }
+    );
 
     return res.status(200).json({ token });
   } catch (err) {

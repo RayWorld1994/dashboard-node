@@ -6,15 +6,14 @@ datasource db {
   provider = "postgresql"
 }
 
-// Auth user — owns email/password for login
 model User {
   id        Int      @id @default(autoincrement())
   email     String   @unique
   password  String
+  role      String   @default("user")
   createdAt DateTime @default(now())
 }
 
-// Dashboard team member (displayed in the UI, seeded with fake data)
 model Profile {
   id        Int      @id @default(autoincrement())
   name      String
@@ -26,6 +25,8 @@ model Profile {
   ownedProjects Project[]     @relation("ProjectOwner")
   assignedTasks Task[]        @relation("TaskAssignee")
   activityLogs  ActivityLog[]
+  taskComments  TaskComment[]
+  taskHistory   TaskHistory[]
 
   @@map("profiles")
 }
@@ -33,7 +34,7 @@ model Profile {
 model Project {
   id        Int      @id @default(autoincrement())
   name      String
-  status    String   // active | completed | pending
+  status    String
   ownerId   Int
   owner     Profile  @relation("ProjectOwner", fields: [ownerId], references: [id])
   createdAt DateTime @default(now())
@@ -44,18 +45,53 @@ model Project {
 }
 
 model Task {
-  id         Int       @id @default(autoincrement())
-  title      String
-  status     String    // todo | in_progress | done
-  priority   String    // low | medium | high
-  projectId  Int
-  project    Project   @relation(fields: [projectId], references: [id])
-  assignedTo Int
-  assignee   Profile   @relation("TaskAssignee", fields: [assignedTo], references: [id])
-  dueDate    DateTime?
-  createdAt  DateTime  @default(now())
+  id          Int       @id @default(autoincrement())
+  title       String
+  description String?
+  status      String    // todo | in_progress | review | blocked | done
+  priority    String    // low | medium | high | urgent
+  projectId   Int
+  project     Project   @relation(fields: [projectId], references: [id])
+  assignedTo  Int
+  assignee    Profile   @relation("TaskAssignee", fields: [assignedTo], references: [id])
+  dueDate     DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  comments    TaskComment[]
+  history     TaskHistory[]
 
   @@map("tasks")
+}
+
+model TaskComment {
+  id         Int      @id @default(autoincrement())
+  taskId     Int
+  task       Task     @relation(fields: [taskId], references: [id])
+  authorId   Int?
+  author     Profile? @relation(fields: [authorId], references: [id])
+  // Stored so comments always have a readable author even without a linked profile
+  authorName String
+  message    String
+  createdAt  DateTime @default(now())
+
+  @@map("task_comments")
+}
+
+model TaskHistory {
+  id        Int      @id @default(autoincrement())
+  taskId    Int
+  task      Task     @relation(fields: [taskId], references: [id])
+  userId    Int?
+  user      Profile? @relation(fields: [userId], references: [id])
+  actorName String   // display name fallback
+  action    String   // task_created | status_changed | priority_changed | description_updated | assignee_changed | comment_added
+  field     String?
+  oldValue  String?
+  newValue  String?
+  createdAt DateTime @default(now())
+
+  @@map("task_history")
 }
 
 model ActivityLog {
