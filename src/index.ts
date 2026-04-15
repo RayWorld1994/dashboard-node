@@ -5,6 +5,7 @@ import express from "express";
 
 import { authRouter } from "./routes/auth";
 import { dashboardRouter } from "./routes/dashboard";
+import { apiRouter } from "./routes/api";
 
 const app = express();
 const requestedPort = process.env.PORT ? Number(process.env.PORT) : 3000;
@@ -43,6 +44,7 @@ app.get("/health", (req, res) => {
 
 app.use("/auth", authRouter);
 app.use("/dashboard", dashboardRouter);
+app.use("/api", apiRouter);
 
 app.use((req, res) => {
   res.status(404).json({ error: `Route ${req.method} ${req.path} not found.` });

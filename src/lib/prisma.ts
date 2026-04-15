@@ -1,11 +1,3 @@
-import { PrismaClient } from "@prisma/client";
-import { PrismaPg } from "@prisma/adapter-pg";
-
-const connectionString = process.env.DATABASE_URL;
-if (!connectionString) {
-  throw new Error("DATABASE_URL is not set");
-}
-
-const adapter = new PrismaPg({ connectionString });
-
-export const prisma = new PrismaClient({ adapter });
+// Re-export the shared client from its canonical location.
+// Existing code that imports from here continues to work.
+export { prisma } from "../db/client";
