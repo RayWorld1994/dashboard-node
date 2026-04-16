@@ -10,13 +10,13 @@
  * The tool layer in tools.ts enforces authorization regardless of prompt content.
  */
 
-import { streamText, pipeTextStreamToResponse, stepCountIs } from "ai";
+import { streamText, stepCountIs } from "ai";
 import { openai } from "@ai-sdk/openai";
 import type { ModelMessage } from "ai";
 import type { ServerResponse } from "http";
 import type { UserContext } from "./context";
 import { buildTools } from "./tools";
-import { auditQuestion, auditToolCall } from "./audit";
+import { auditQuestion, auditToolCall, auditError } from "./audit";
 
 function buildSystemPrompt(ctx: UserContext): string {
   const whoAmI = ctx.profileName ? `${ctx.profileName} (${ctx.email})` : ctx.email;
@@ -84,6 +84,49 @@ export function createChatStream(
     },
   });
 
-  // Pipe the text stream directly to the Express response.
-  pipeTextStreamToResponse({ response: res, textStream: result.textStream });
+  // Stream the response as plain text.
+  // We read fullStream so we can catch errors and forward them as readable text
+  // instead of silently closing the connection.
+  res.writeHead(200, { "Content-Type": "text/plain; charset=utf-8" });
+
+  (async () => {
+    try {
+      for await (const chunk of result.fullStream) {
+        if (chunk.type === "text-delta") {
+          res.write(chunk.textDelta);
+        } else if (chunk.type === "error") {
+          const msg =
+            (chunk.error as { message?: string })?.message ??
+            String(chunk.error);
+          auditError(ctx, msg);
+
+          // Translate common OpenAI error codes into friendly messages.
+          const friendly = friendlyError(msg);
+          res.write(`\n\n⚠️ ${friendly}`);
+        }
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "AI service error";
+      auditError(ctx, msg);
+      if (!res.writableEnded) res.write(`\n\n⚠️ ${friendlyError(msg)}`);
+    } finally {
+      res.end();
+    }
+  })();
+}
+
+function friendlyError(msg: string): string {
+  if (msg.includes("insufficient_quota") || msg.includes("exceeded your current quota")) {
+    return "The AI service is currently unavailable — the OpenAI account has exceeded its quota. Please add credits at platform.openai.com and try again.";
+  }
+  if (msg.includes("invalid_api_key") || msg.includes("Incorrect API key")) {
+    return "Invalid OpenAI API key. Please check OPENAI_API_KEY in your server configuration.";
+  }
+  if (msg.includes("model_not_found")) {
+    return "The configured AI model was not found. Check OPENAI_MODEL in your server configuration.";
+  }
+  if (msg.includes("rate_limit")) {
+    return "OpenAI rate limit reached. Please wait a moment and try again.";
+  }
+  return `AI service error: ${msg}`;
 }
