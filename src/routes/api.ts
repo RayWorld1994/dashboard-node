@@ -27,6 +27,7 @@ import {
   addCommentHandler,
 } from "../controllers/comments.controller";
 import { authenticateToken, requireAdmin } from "../middleware/auth";
+import { chatQueryHandler } from "../controllers/chat.controller";
 
 const apiRouter = Router();
 apiRouter.use(authenticateToken);
@@ -55,6 +56,9 @@ apiRouter.delete("/tasks/:id", requireAdmin, deleteTaskHandler);
 apiRouter.get("/tasks/:id/comments", taskCommentsHandler);
 apiRouter.post("/tasks/:id/comments", addCommentHandler);
 apiRouter.get("/tasks/:id/history", taskHistoryHandler);
+
+// ── Chatbot ───────────────────────────────────────────────────────────────
+apiRouter.post("/chat/query", chatQueryHandler);
 
 // ── Users (profiles) ──────────────────────────────────────────────────────
 apiRouter.get("/users", usersHandler);
